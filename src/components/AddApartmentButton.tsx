@@ -38,6 +38,7 @@ export class AddApartmentButton extends React.Component<
           }
           buttonStyle={styles.buttonContainer}
           titleStyle={styles.buttonText}
+          onPress={onPress}
         />
       </View>
     );
