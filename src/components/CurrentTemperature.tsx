@@ -56,7 +56,6 @@ export class CurrentTemperature extends React.Component<
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "red",
     borderRadius: common.borderRadius
   },
   text: {
