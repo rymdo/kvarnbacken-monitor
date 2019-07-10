@@ -1,6 +1,7 @@
 import * as React from "react";
 import { View, StyleSheet, Text } from "react-native";
 import { RFValue } from "react-native-responsive-fontsize";
+import { common } from "./../Constants";
 
 export enum Unit {
   C,
@@ -28,9 +29,9 @@ export class CurrentTemperature extends React.Component<
     const { value } = this.props;
     return (
       <View style={styles.container}>
-        <Text
-          style={styles.text}
-        >{`${value} ${this.getUnitSuffixShort()}`}</Text>
+        <Text style={styles.text}>
+          {`${value} ${this.getUnitSuffixShort()}`}
+        </Text>
       </View>
     );
   }
@@ -46,6 +47,9 @@ export class CurrentTemperature extends React.Component<
       case Unit.K: {
         return "K";
       }
+      default: {
+        throw new Error("invalid unit");
+      }
     }
   }
 }
@@ -53,7 +57,7 @@ export class CurrentTemperature extends React.Component<
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "red",
-    borderRadius: 20
+    borderRadius: common.borderRadius
   },
   text: {
     fontSize: RFValue(100),
