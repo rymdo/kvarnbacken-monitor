@@ -2,7 +2,10 @@ import * as React from "react";
 import { View, StyleSheet, Text } from "react-native";
 import { CurrentTemperature, Unit } from "./src/components/CurrentTemperature";
 import { AddApartmentButton } from "./src/components/AddApartmentButton";
-import { BarCodeScannerModal } from "./src/components/BarCodeScannerModal";
+import {
+  BarCodeScannerModal,
+  BarCodeScannerResult
+} from "./src/components/BarCodeScannerModal";
 
 export interface AppProps {}
 
@@ -19,6 +22,8 @@ export class AppContainer extends React.Component<AppProps, AppState> {
   }
 
   public render() {
+    const { showBarCodeScannerModal } = this.state;
+
     return (
       <View style={styles.container}>
         <View style={styles.containerTemperature}>
@@ -29,12 +34,12 @@ export class AppContainer extends React.Component<AppProps, AppState> {
             onPress={() => {
               this.showBarCodeScannerModal();
             }}
-            isLoading={false}
+            isLoading={showBarCodeScannerModal}
           />
         </View>
         <BarCodeScannerModal
-          isVisible={this.state.showBarCodeScannerModal}
-          onAdd={(id: string) => {
+          isVisible={showBarCodeScannerModal}
+          onResult={(result: BarCodeScannerResult) => {
             this.hideBarCodeScannerModal();
           }}
           onCancel={() => {
