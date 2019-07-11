@@ -6,48 +6,37 @@ import {
   BarCodeScannerModal,
   BarCodeScannerResult
 } from "./src/components/BarCodeScannerModal";
-
-import axios, { AxiosInstance } from "axios";
-
-interface ListSensorValue {
-  Date: string;
-  Hum: number;
-  Temp: number;
-}
+import { EgainService } from "./src/services/Egain";
 
 export interface AppProps {}
 
 export interface AppState {
   showBarCodeScannerModal: boolean;
   apartmentId: string | undefined;
-  sensorValue: ListSensorValue | undefined;
+  temperature: number | undefined;
 }
 
 export class AppContainer extends React.Component<AppProps, AppState> {
-  private axoisInstance: AxiosInstance;
+  private readonly egainService: EgainService;
 
   constructor(props: AppProps) {
     super(props);
     this.state = {
       showBarCodeScannerModal: false,
       apartmentId: undefined,
-      sensorValue: undefined
+      temperature: undefined
     };
-
-    this.axoisInstance = axios.create({
-      baseURL: "http://install.egain.se/Home/",
-      timeout: 1000
-    });
+    this.egainService = new EgainService();
   }
 
   public render() {
-    const { showBarCodeScannerModal, sensorValue } = this.state;
+    const { showBarCodeScannerModal, temperature } = this.state;
 
     return (
       <View style={styles.container}>
         <View style={styles.containerTemperature}>
           <CurrentTemperature
-            value={sensorValue ? sensorValue.Temp : 0.0}
+            value={temperature ? temperature : 0.0}
             unit={Unit.C}
           />
         </View>
@@ -84,7 +73,7 @@ export class AppContainer extends React.Component<AppProps, AppState> {
     this.setState({
       apartmentId: result.id
     });
-    this.updateApartment(result.id);
+    this.updateTemperature(result.id);
     this.hideBarCodeScannerModal();
   };
 
@@ -92,19 +81,14 @@ export class AppContainer extends React.Component<AppProps, AppState> {
     this.hideBarCodeScannerModal();
   };
 
-  private updateApartment = async (guid: string): Promise<void> => {
+  private updateTemperature = async (guid: string): Promise<void> => {
     if (!guid) {
-      console.error("App: updateApartment - guid not set");
+      console.error("App: updateTemperature - guid not set");
       return;
     }
     try {
-      const resp = await this.axoisInstance.post("ListSensorValues", {
-        guid,
-        daysAgo: 1
-      });
-      const sensorValues: ListSensorValue[] = resp.data as ListSensorValue[];
-      const lastValue = sensorValues.pop();
-      this.setState({ sensorValue: lastValue });
+      const temperature = await this.egainService.getLatestTemperature(guid);
+      this.setState({ temperature });
     } catch (e) {
       console.error(e);
     }

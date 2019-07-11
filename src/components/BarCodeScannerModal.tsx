@@ -61,8 +61,7 @@ export class BarCodeScannerModal extends React.Component<
   };
 
   private onResult = (result: BarCodeScannerResult) => {
-    console.log("BarCodeScannerModal: onResult");
-    console.log(result);
+    console.log(`BarCodeScannerModal: onResult [id: ${result.id}]`);
     this.setState({ ...this.defaultState, isDone: true });
     this.props.onResult(result);
   };
@@ -140,7 +139,13 @@ export class BarCodeScannerModal extends React.Component<
     if (!data.startsWith(prefix)) {
       return;
     }
+
     const id = data.split(prefix).pop();
+
+    if (id.length < 10) {
+      return;
+    }
+
     this.onResult({ id });
   };
 
