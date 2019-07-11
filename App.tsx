@@ -7,27 +7,49 @@ import {
   BarCodeScannerResult
 } from "./src/components/BarCodeScannerModal";
 
+import axios, { AxiosInstance } from "axios";
+
+interface ListSensorValue {
+  Date: string;
+  Hum: number;
+  Temp: number;
+}
+
 export interface AppProps {}
 
 export interface AppState {
   showBarCodeScannerModal: boolean;
+  apartmentId: string | undefined;
+  sensorValue: ListSensorValue | undefined;
 }
 
 export class AppContainer extends React.Component<AppProps, AppState> {
+  private axoisInstance: AxiosInstance;
+
   constructor(props: AppProps) {
     super(props);
     this.state = {
-      showBarCodeScannerModal: false
+      showBarCodeScannerModal: false,
+      apartmentId: undefined,
+      sensorValue: undefined
     };
+
+    this.axoisInstance = axios.create({
+      baseURL: "http://install.egain.se/Home/",
+      timeout: 1000
+    });
   }
 
   public render() {
-    const { showBarCodeScannerModal } = this.state;
+    const { showBarCodeScannerModal, sensorValue } = this.state;
 
     return (
       <View style={styles.container}>
         <View style={styles.containerTemperature}>
-          <CurrentTemperature value={22.1} unit={Unit.C} />
+          <CurrentTemperature
+            value={sensorValue ? sensorValue.Temp : 0.0}
+            unit={Unit.C}
+          />
         </View>
         <View style={styles.containerAddApartment}>
           <AddApartmentButton
@@ -39,12 +61,8 @@ export class AppContainer extends React.Component<AppProps, AppState> {
         </View>
         <BarCodeScannerModal
           isVisible={showBarCodeScannerModal}
-          onResult={(result: BarCodeScannerResult) => {
-            this.hideBarCodeScannerModal();
-          }}
-          onCancel={() => {
-            this.hideBarCodeScannerModal();
-          }}
+          onResult={this.onBarCodeScannerResult}
+          onCancel={this.onBarCodeScannerCancel}
         />
       </View>
     );
@@ -60,6 +78,36 @@ export class AppContainer extends React.Component<AppProps, AppState> {
     this.setState({
       showBarCodeScannerModal: false
     });
+  };
+
+  private onBarCodeScannerResult = (result: BarCodeScannerResult) => {
+    this.setState({
+      apartmentId: result.id
+    });
+    this.updateApartment(result.id);
+    this.hideBarCodeScannerModal();
+  };
+
+  private onBarCodeScannerCancel = () => {
+    this.hideBarCodeScannerModal();
+  };
+
+  private updateApartment = async (guid: string): Promise<void> => {
+    if (!guid) {
+      console.error("App: updateApartment - guid not set");
+      return;
+    }
+    try {
+      const resp = await this.axoisInstance.post("ListSensorValues", {
+        guid,
+        daysAgo: 1
+      });
+      const sensorValues: ListSensorValue[] = resp.data as ListSensorValue[];
+      const lastValue = sensorValues.pop();
+      this.setState({ sensorValue: lastValue });
+    } catch (e) {
+      console.error(e);
+    }
   };
 }
 
