@@ -19,7 +19,7 @@ export interface BarCodeEvent {
 }
 
 export interface BarCodeScannerResult {
-  id: string;
+  guid: string;
 }
 
 export interface BarCodeScannerProps {
@@ -60,7 +60,7 @@ export class BarCodeScannerModal extends React.Component<
   };
 
   private onResult = (result: BarCodeScannerResult) => {
-    console.log(`BarCodeScannerModal: onResult [id: ${result.id}]`);
+    console.log(`BarCodeScannerModal: onResult [id: ${result.guid}]`);
     this.setState({ ...this.defaultState, isDone: true });
     this.props.onResult(result);
   };
@@ -139,13 +139,13 @@ export class BarCodeScannerModal extends React.Component<
       return;
     }
 
-    const id = data.split(prefix).pop();
+    const guid = data.split(prefix).pop();
 
-    if (id.length < 10) {
+    if (guid.length < 10) {
       return;
     }
 
-    this.onResult({ id });
+    this.onResult({ guid });
   };
 
   private getCameraView(): JSX.Element {

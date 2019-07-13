@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     borderRadius: common.borderRadius
   },
   textTemperature: {
-    fontSize: RFValue(100),
+    fontSize: RFValue(80),
     marginLeft: 20,
     marginRight: 20,
     justifyContent: "center",

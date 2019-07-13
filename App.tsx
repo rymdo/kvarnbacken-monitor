@@ -7,6 +7,7 @@ import {
   BarCodeScannerResult
 } from "./src/components/BarCodeScannerModal";
 import { EgainService, ListSensorValue } from "./src/services/Egain";
+import { StorageService, Store } from "./src/services/Storage";
 import {
   getStatusBarHeight,
   getBottomSpace
@@ -16,43 +17,88 @@ import Constants from "expo-constants";
 export interface AppProps {}
 
 export interface AppState {
-  showBarCodeScannerModal: boolean;
-  apartmentId: string | undefined;
-  reading: ListSensorValue | undefined;
-  loading: boolean;
+  scanner: {
+    show: boolean;
+  };
+  egain: {
+    loading: boolean;
+  };
+  store: {
+    loading: boolean;
+  };
+  apartment: {
+    guid: string | undefined;
+    readingLatest: ListSensorValue | undefined;
+  };
 }
 
 export class AppContainer extends React.Component<AppProps, AppState> {
+  private readonly storageService: StorageService;
   private readonly egainService: EgainService;
 
   constructor(props: AppProps) {
     super(props);
     this.state = {
-      showBarCodeScannerModal: false,
-      apartmentId: undefined,
-      reading: undefined,
-      loading: false
+      scanner: {
+        show: false
+      },
+      egain: {
+        loading: false
+      },
+      store: {
+        loading: false
+      },
+      apartment: {
+        guid: undefined,
+        readingLatest: undefined
+      }
     };
     this.egainService = new EgainService();
+    this.storageService = new StorageService();
   }
 
+  componentDidMount = () => {
+    this.loadStorage();
+  };
+
+  componentDidUpdate = (prevProps: AppProps, prevState: AppState) => {
+    const guidChanged = (): boolean => {
+      return prevState.apartment.guid !== this.state.apartment.guid;
+    };
+    if (guidChanged() && Constants.isDevice) {
+      this.updateTemperature(this.state.apartment.guid);
+    }
+  };
+
+  private loadStorage = async (): Promise<void> => {};
+
+  private isLoading = (): boolean => {
+    const { egain, store } = this.state;
+    return egain.loading || store.loading;
+  };
+
   public render() {
-    const {
-      showBarCodeScannerModal,
-      apartmentId,
-      reading,
-      loading
-    } = this.state;
+    const { scanner, apartment } = this.state;
+
+    if (this.isLoading()) {
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>;
+    }
 
     return (
       <View style={styles.container}>
         <View style={styles.containerTemperature}>
-          {loading ? (
-            <ActivityIndicator size="large" color="#0000ff" />
-          ) : apartmentId ? (
+          {apartment.guid ? (
             <CurrentTemperature
-              temperature={reading ? reading.Temp : 0.0}
-              date={reading ? reading.Date : new Date()}
+              temperature={
+                apartment.readingLatest ? apartment.readingLatest.Temp : 0.0
+              }
+              date={
+                apartment.readingLatest
+                  ? apartment.readingLatest.Date
+                  : new Date()
+              }
               unit={Unit.C}
             />
           ) : (
@@ -63,66 +109,93 @@ export class AppContainer extends React.Component<AppProps, AppState> {
           <AddApartmentButton
             onPress={() => {
               if (Constants.isDevice) {
-                this.showBarCodeScannerModal();
+                this.showScanner();
               } else {
                 this.setState({
-                  apartmentId: "1234",
-                  reading: { Temp: 22.2, Hum: 40, Date: new Date() }
+                  apartment: {
+                    ...this.state.apartment,
+                    guid: "1234",
+                    readingLatest: { Temp: 22.2, Hum: 40, Date: new Date() }
+                  }
                 });
               }
             }}
-            isLoading={showBarCodeScannerModal}
+            isLoading={scanner.show}
           />
         </View>
         <BarCodeScannerModal
-          isVisible={showBarCodeScannerModal}
-          onResult={this.onBarCodeScannerResult}
-          onCancel={this.onBarCodeScannerCancel}
+          isVisible={scanner.show}
+          onResult={this.onScannerResult}
+          onCancel={this.onScannerCancel}
         />
       </View>
     );
   }
 
-  private showBarCodeScannerModal = () => {
+  private showScanner = () => {
     this.setState({
-      showBarCodeScannerModal: true
+      scanner: {
+        ...this.state.scanner,
+        show: true
+      }
     });
   };
 
-  private hideBarCodeScannerModal = () => {
+  private hideScanner = () => {
     this.setState({
-      showBarCodeScannerModal: false
+      scanner: {
+        ...this.state.scanner,
+        show: false
+      }
     });
   };
 
-  private onBarCodeScannerResult = (result: BarCodeScannerResult) => {
+  private onScannerResult = (result: BarCodeScannerResult) => {
     this.setState({
-      apartmentId: result.id
+      apartment: {
+        ...this.state.apartment,
+        guid: result.guid
+      }
     });
-    this.updateTemperature(result.id);
-    this.hideBarCodeScannerModal();
+    this.hideScanner();
   };
 
-  private onBarCodeScannerCancel = () => {
-    this.hideBarCodeScannerModal();
+  private onScannerCancel = () => {
+    this.hideScanner();
   };
 
   private updateTemperature = async (guid: string): Promise<void> => {
+    console.log(`App: updateTemperature [guid: ${guid}]`);
     if (!guid) {
       console.error("App: updateTemperature - guid not set");
       return;
     }
     try {
-      this.setState({ loading: true });
+      this.setState({
+        egain: {
+          ...this.state.egain,
+          loading: true
+        }
+      });
       const reading = await this.egainService.getLatestReading(guid);
       console.log(
         `App: updateTemperature [Temp: ${reading.Temp} Date: ${reading.Date}]`
       );
-      this.setState({ reading });
+      this.setState({
+        apartment: {
+          ...this.state.apartment,
+          readingLatest: reading
+        }
+      });
     } catch (e) {
       console.error(e);
     } finally {
-      this.setState({ loading: false });
+      this.setState({
+        egain: {
+          ...this.state.egain,
+          loading: false
+        }
+      });
     }
   };
 }
