@@ -11,6 +11,7 @@ import {
   getStatusBarHeight,
   getBottomSpace
 } from "react-native-iphone-x-helper";
+import Constants from "expo-constants";
 
 export interface AppProps {}
 
@@ -61,7 +62,14 @@ export class AppContainer extends React.Component<AppProps, AppState> {
         <View style={styles.containerAddApartment}>
           <AddApartmentButton
             onPress={() => {
-              this.showBarCodeScannerModal();
+              if (Constants.isDevice) {
+                this.showBarCodeScannerModal();
+              } else {
+                this.setState({
+                  apartmentId: "1234",
+                  reading: { Temp: 22.2, Hum: 40, Date: new Date() }
+                });
+              }
             }}
             isLoading={showBarCodeScannerModal}
           />
