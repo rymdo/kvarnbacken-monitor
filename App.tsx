@@ -1,5 +1,5 @@
 import * as React from "react";
-import { View, StyleSheet, Text } from "react-native";
+import { View, StyleSheet, ActivityIndicator, Text } from "react-native";
 import { CurrentTemperature, Unit } from "./src/components/CurrentTemperature";
 import { AddApartmentButton } from "./src/components/AddApartmentButton";
 import {
@@ -7,6 +7,10 @@ import {
   BarCodeScannerResult
 } from "./src/components/BarCodeScannerModal";
 import { EgainService, ListSensorValue } from "./src/services/Egain";
+import {
+  getStatusBarHeight,
+  getBottomSpace
+} from "react-native-iphone-x-helper";
 
 export interface AppProps {}
 
@@ -14,6 +18,7 @@ export interface AppState {
   showBarCodeScannerModal: boolean;
   apartmentId: string | undefined;
   reading: ListSensorValue | undefined;
+  loading: boolean;
 }
 
 export class AppContainer extends React.Component<AppProps, AppState> {
@@ -24,22 +29,34 @@ export class AppContainer extends React.Component<AppProps, AppState> {
     this.state = {
       showBarCodeScannerModal: false,
       apartmentId: undefined,
-      reading: undefined
+      reading: undefined,
+      loading: false
     };
     this.egainService = new EgainService();
   }
 
   public render() {
-    const { showBarCodeScannerModal, reading } = this.state;
+    const {
+      showBarCodeScannerModal,
+      apartmentId,
+      reading,
+      loading
+    } = this.state;
 
     return (
       <View style={styles.container}>
         <View style={styles.containerTemperature}>
-          <CurrentTemperature
-            temperature={reading ? reading.Temp : 0.0}
-            date={reading ? reading.Date : new Date()}
-            unit={Unit.C}
-          />
+          {loading ? (
+            <ActivityIndicator size="large" color="#0000ff" />
+          ) : apartmentId ? (
+            <CurrentTemperature
+              temperature={reading ? reading.Temp : 0.0}
+              date={reading ? reading.Date : new Date()}
+              unit={Unit.C}
+            />
+          ) : (
+            <Text>Scan QR with button below</Text>
+          )}
         </View>
         <View style={styles.containerAddApartment}>
           <AddApartmentButton
@@ -88,6 +105,7 @@ export class AppContainer extends React.Component<AppProps, AppState> {
       return;
     }
     try {
+      this.setState({ loading: true });
       const reading = await this.egainService.getLatestReading(guid);
       console.log(
         `App: updateTemperature [Temp: ${reading.Temp} Date: ${reading.Date}]`
@@ -95,6 +113,8 @@ export class AppContainer extends React.Component<AppProps, AppState> {
       this.setState({ reading });
     } catch (e) {
       console.error(e);
+    } finally {
+      this.setState({ loading: false });
     }
   };
 }
@@ -106,11 +126,11 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "transparent",
     alignItems: "center",
     justifyContent: "center",
-    paddingTop: 40,
-    paddingBottom: 30
+    paddingTop: getStatusBarHeight(),
+    marginBottom: getBottomSpace()
   },
   containerTemperature: {
     flex: 10,
