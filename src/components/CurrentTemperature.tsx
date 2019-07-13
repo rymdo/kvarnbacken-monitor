@@ -5,8 +5,7 @@ import { common } from "./../Constants";
 
 export enum Unit {
   C,
-  F,
-  K
+  F
 }
 
 export interface CurrentTemperatureProps {
@@ -39,15 +38,13 @@ export class CurrentTemperature extends React.Component<
   }
 
   private getUnitSuffixShort(): string {
+    const degreeSymbol = "\u00B0";
     switch (this.props.unit) {
       case Unit.C: {
-        return "C";
+        return `${degreeSymbol}C`;
       }
       case Unit.F: {
-        return "F";
-      }
-      case Unit.K: {
-        return "K";
+        return `${degreeSymbol}F`;
       }
       default: {
         throw new Error("invalid unit");
