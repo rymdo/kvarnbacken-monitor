@@ -10,7 +10,8 @@ export enum Unit {
 }
 
 export interface CurrentTemperatureProps {
-  value: number;
+  temperature: number;
+  date: Date;
   unit: Unit;
 }
 
@@ -26,12 +27,13 @@ export class CurrentTemperature extends React.Component<
   }
 
   public render() {
-    const { value } = this.props;
+    const { temperature, date } = this.props;
     return (
       <View style={styles.container}>
-        <Text style={styles.text}>
-          {`${value} ${this.getUnitSuffixShort()}`}
+        <Text style={styles.textTemperature}>
+          {`${temperature} ${this.getUnitSuffixShort()}`}
         </Text>
+        <Text style={styles.textDate}>{this.dateToFormatedTime(date)}</Text>
       </View>
     );
   }
@@ -52,15 +54,36 @@ export class CurrentTemperature extends React.Component<
       }
     }
   }
+
+  private dateToFormatedTime(date: Date): string {
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric"
+    };
+    return date.toLocaleDateString("sv-SE", options);
+  }
 }
 
 const styles = StyleSheet.create({
   container: {
     borderRadius: common.borderRadius
   },
-  text: {
+  textTemperature: {
     fontSize: RFValue(100),
     marginLeft: 20,
-    marginRight: 20
+    marginRight: 20,
+    justifyContent: "center",
+    alignContent: "center"
+  },
+  textDate: {
+    fontSize: RFValue(20),
+    marginLeft: 20,
+    marginRight: 20,
+    justifyContent: "center",
+    alignContent: "center"
   }
 });

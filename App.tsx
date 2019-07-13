@@ -6,14 +6,14 @@ import {
   BarCodeScannerModal,
   BarCodeScannerResult
 } from "./src/components/BarCodeScannerModal";
-import { EgainService } from "./src/services/Egain";
+import { EgainService, ListSensorValue } from "./src/services/Egain";
 
 export interface AppProps {}
 
 export interface AppState {
   showBarCodeScannerModal: boolean;
   apartmentId: string | undefined;
-  temperature: number | undefined;
+  reading: ListSensorValue | undefined;
 }
 
 export class AppContainer extends React.Component<AppProps, AppState> {
@@ -24,19 +24,20 @@ export class AppContainer extends React.Component<AppProps, AppState> {
     this.state = {
       showBarCodeScannerModal: false,
       apartmentId: undefined,
-      temperature: undefined
+      reading: undefined
     };
     this.egainService = new EgainService();
   }
 
   public render() {
-    const { showBarCodeScannerModal, temperature } = this.state;
+    const { showBarCodeScannerModal, reading } = this.state;
 
     return (
       <View style={styles.container}>
         <View style={styles.containerTemperature}>
           <CurrentTemperature
-            value={temperature ? temperature : 0.0}
+            temperature={reading ? reading.Temp : 0.0}
+            date={reading ? reading.Date : new Date()}
             unit={Unit.C}
           />
         </View>
@@ -87,8 +88,11 @@ export class AppContainer extends React.Component<AppProps, AppState> {
       return;
     }
     try {
-      const temperature = await this.egainService.getLatestTemperature(guid);
-      this.setState({ temperature });
+      const reading = await this.egainService.getLatestReading(guid);
+      console.log(
+        `App: updateTemperature [Temp: ${reading.Temp} Date: ${reading.Date}]`
+      );
+      this.setState({ reading });
     } catch (e) {
       console.error(e);
     }

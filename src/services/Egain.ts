@@ -1,7 +1,8 @@
 import axios, { AxiosInstance } from "axios";
 
-import { Moment } from "moment";
-let moment = require("moment");
+import { Moment } from "moment-timezone";
+//let moment = require("moment");
+let moment = require("moment-timezone");
 
 interface APIListSensorValue {
   Date: string;
@@ -61,12 +62,40 @@ export interface CheckInstalled {
 
 export class EgainService {
   private readonly axoisInstance: AxiosInstance;
+  private readonly timezone: string = "Europe/Stockholm";
+  private readonly timeformat: string = "YYYY-MM-DD HH:mm";
 
   constructor() {
     this.axoisInstance = axios.create({
       baseURL: "http://install.egain.se/Home/",
-      timeout: 1000
+      timeout: 5000
     });
+  }
+
+  public async getLatestReading(guid: string): Promise<ListSensorValue> {
+    try {
+      const apiSensorValues = await this.APIListSensorValues(guid, 1);
+      const apiCheckInstalled = await this.APICheckInstalled(guid);
+
+      const sensorValues: ListSensorValue[] = apiSensorValues.map(value => {
+        return this.mapAPIListSensorValueToListSensorValue(value);
+      });
+
+      const latestSensorValue = this.getLatestSensorValue(sensorValues);
+      const checkInstalled = this.mapAPICheckInstalledToCheckInstalled(
+        apiCheckInstalled
+      );
+
+      return latestSensorValue.Date > checkInstalled.SensorInfo.Date
+        ? latestSensorValue
+        : {
+            Date: checkInstalled.SensorInfo.Date,
+            Hum: checkInstalled.SensorInfo.Humidity,
+            Temp: checkInstalled.SensorInfo.Temp
+          };
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   public async getLatestTemperature(guid: string): Promise<number> {
@@ -78,7 +107,7 @@ export class EgainService {
         return this.mapAPIListSensorValueToListSensorValue(value);
       });
 
-      const latestSensorValue = this.getLatestSensorValues(sensorValues);
+      const latestSensorValue = this.getLatestSensorValue(sensorValues);
       const checkInstalled = this.mapAPICheckInstalledToCheckInstalled(
         apiCheckInstalled
       );
@@ -129,7 +158,7 @@ export class EgainService {
     apiValue: APIListSensorValue
   ): ListSensorValue {
     return {
-      Date: moment(apiValue.Date, "YYYY-MM-DD HH:mm").toDate(),
+      Date: this.convertAPIDateToDate(apiValue.Date),
       Hum: apiValue.Hum,
       Temp: apiValue.Temp
     };
@@ -147,7 +176,7 @@ export class EgainService {
       IsExternal: apiValue.IsExternal,
       PartnerId: apiValue.PartnerId,
       SensorInfo: {
-        Date: moment(apiValue.SensorInfo.Date, "YYYY-MM-DD HH:mm").toDate(),
+        Date: this.convertAPIDateToDate(apiValue.SensorInfo.Date),
         Humidity: apiValue.SensorInfo.Humidity,
         Rssi: Number(apiValue.SensorInfo.Rssi),
         Temp: apiValue.SensorInfo.Temp
@@ -162,7 +191,18 @@ export class EgainService {
     };
   }
 
-  private getLatestSensorValues(values: ListSensorValue[]): ListSensorValue {
+  private convertAPIDateToDate(apiDate: string): Date {
+    const momentDate: Moment = moment.tz(
+      apiDate,
+      this.timeformat,
+      this.timezone
+    );
+    // ToDo: Temp DST fix.
+    momentDate.add(-1, "hours");
+    return momentDate.toDate();
+  }
+
+  private getLatestSensorValue(values: ListSensorValue[]): ListSensorValue {
     return values.reduce((latest, current) => {
       if (!latest) {
         return current;
