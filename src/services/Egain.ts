@@ -11,9 +11,9 @@ interface APIListSensorValue {
 }
 
 export interface ListSensorValue {
-  Date: Date;
-  Hum: number;
-  Temp: number;
+  date: Date;
+  humidity: number;
+  temperature: number;
 }
 
 interface APICheckInstalled {
@@ -86,12 +86,12 @@ export class EgainService {
         apiCheckInstalled
       );
 
-      return latestSensorValue.Date > checkInstalled.SensorInfo.Date
+      return latestSensorValue.date > checkInstalled.SensorInfo.Date
         ? latestSensorValue
         : {
-            Date: checkInstalled.SensorInfo.Date,
-            Hum: checkInstalled.SensorInfo.Humidity,
-            Temp: checkInstalled.SensorInfo.Temp
+            date: checkInstalled.SensorInfo.Date,
+            humidity: checkInstalled.SensorInfo.Humidity,
+            temperature: checkInstalled.SensorInfo.Temp
           };
     } catch (e) {
       console.error(e);
@@ -112,8 +112,8 @@ export class EgainService {
         apiCheckInstalled
       );
 
-      return latestSensorValue.Date > checkInstalled.SensorInfo.Date
-        ? latestSensorValue.Temp
+      return latestSensorValue.date > checkInstalled.SensorInfo.Date
+        ? latestSensorValue.temperature
         : checkInstalled.SensorInfo.Temp;
     } catch (e) {
       console.error(e);
@@ -158,9 +158,9 @@ export class EgainService {
     apiValue: APIListSensorValue
   ): ListSensorValue {
     return {
-      Date: this.convertAPIDateToDate(apiValue.Date),
-      Hum: apiValue.Hum,
-      Temp: apiValue.Temp
+      date: this.convertAPIDateToDate(apiValue.Date),
+      humidity: apiValue.Hum,
+      temperature: apiValue.Temp
     };
   }
 
@@ -207,7 +207,7 @@ export class EgainService {
       if (!latest) {
         return current;
       }
-      if (latest.Date > current.Date) {
+      if (latest.date > current.date) {
         return latest;
       } else {
         return current;

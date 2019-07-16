@@ -1,5 +1,13 @@
 import * as React from "react";
-import { View, StyleSheet, ActivityIndicator, Text } from "react-native";
+import {
+  View,
+  StyleSheet,
+  ActivityIndicator,
+  Text,
+  SafeAreaView,
+  Platform,
+  StatusBar
+} from "react-native";
 import { CurrentTemperature, Unit } from "./src/components/CurrentTemperature";
 import { AddApartmentButton } from "./src/components/AddApartmentButton";
 import {
@@ -8,11 +16,8 @@ import {
 } from "./src/components/BarCodeScannerModal";
 import { EgainService, ListSensorValue } from "./src/services/Egain";
 import { StorageService, Store } from "./src/services/Storage";
-import {
-  getStatusBarHeight,
-  getBottomSpace
-} from "react-native-iphone-x-helper";
 import Constants from "expo-constants";
+import { common } from "./src/Constants";
 
 export interface AppProps {}
 
@@ -72,65 +77,35 @@ export class AppContainer extends React.Component<AppProps, AppState> {
 
   private loadStorage = async (): Promise<void> => {};
 
+  private isSimulator = (): boolean => {
+    return !Constants.isDevice;
+  };
+
   private isLoading = (): boolean => {
     const { egain, store } = this.state;
     return egain.loading || store.loading;
   };
 
-  public render() {
-    const { scanner, apartment } = this.state;
+  private hasApartmentReading = (): boolean => {
+    const { apartment } = this.state;
+    return !!(apartment.guid && !!apartment.readingLatest);
+  };
 
+  private getTemperatureView = (): JSX.Element => {
+    const { apartment } = this.state;
     if (this.isLoading()) {
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#0000ff" />
-      </View>;
+      return <></>;
     }
-
+    if (!this.hasApartmentReading()) {
+      return (
+        <Text style={styles.textNoApartment}>Scan QR with button below</Text>
+      );
+    }
+    const { temperature, date } = apartment.readingLatest;
     return (
-      <View style={styles.container}>
-        <View style={styles.containerTemperature}>
-          {apartment.guid ? (
-            <CurrentTemperature
-              temperature={
-                apartment.readingLatest ? apartment.readingLatest.Temp : 0.0
-              }
-              date={
-                apartment.readingLatest
-                  ? apartment.readingLatest.Date
-                  : new Date()
-              }
-              unit={Unit.C}
-            />
-          ) : (
-            <Text>Scan QR with button below</Text>
-          )}
-        </View>
-        <View style={styles.containerAddApartment}>
-          <AddApartmentButton
-            onPress={() => {
-              if (Constants.isDevice) {
-                this.showScanner();
-              } else {
-                this.setState({
-                  apartment: {
-                    ...this.state.apartment,
-                    guid: "1234",
-                    readingLatest: { Temp: 22.2, Hum: 40, Date: new Date() }
-                  }
-                });
-              }
-            }}
-            isLoading={scanner.show}
-          />
-        </View>
-        <BarCodeScannerModal
-          isVisible={scanner.show}
-          onResult={this.onScannerResult}
-          onCancel={this.onScannerCancel}
-        />
-      </View>
+      <CurrentTemperature temperature={temperature} date={date} unit={Unit.C} />
     );
-  }
+  };
 
   private showScanner = () => {
     this.setState({
@@ -148,6 +123,36 @@ export class AppContainer extends React.Component<AppProps, AppState> {
         show: false
       }
     });
+  };
+
+  private onPressAddApartmentButton = () => {
+    if (this.isSimulator()) {
+      this.setState({
+        egain: {
+          ...this.state.egain,
+          loading: true
+        }
+      });
+      setTimeout(() => {
+        this.setState({
+          apartment: {
+            ...this.state.apartment,
+            guid: "1234",
+            readingLatest: {
+              temperature: 22.3,
+              humidity: 40,
+              date: new Date()
+            }
+          },
+          egain: {
+            ...this.state.egain,
+            loading: false
+          }
+        });
+      }, 1000);
+      return;
+    }
+    this.showScanner();
   };
 
   private onScannerResult = (result: BarCodeScannerResult) => {
@@ -179,7 +184,9 @@ export class AppContainer extends React.Component<AppProps, AppState> {
       });
       const reading = await this.egainService.getLatestReading(guid);
       console.log(
-        `App: updateTemperature [Temp: ${reading.Temp} Date: ${reading.Date}]`
+        `App: updateTemperature [Temp: ${reading.temperature} Date: ${
+          reading.date
+        }]`
       );
       this.setState({
         apartment: {
@@ -198,33 +205,83 @@ export class AppContainer extends React.Component<AppProps, AppState> {
       });
     }
   };
+
+  public render(): JSX.Element {
+    const { scanner } = this.state;
+
+    if (this.isLoading()) {
+      return (
+        <View style={styles.container}>
+          <ActivityIndicator size={"large"} color={common.text.color.primary} />
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.container}>
+        <View style={styles.containerTemperature}>
+          {this.getTemperatureView()}
+        </View>
+        <View style={styles.containerAddApartment}>
+          <AddApartmentButton
+            onPress={this.onPressAddApartmentButton}
+            isLoading={scanner.show}
+          />
+        </View>
+        <BarCodeScannerModal
+          isVisible={scanner.show}
+          onResult={this.onScannerResult}
+          onCancel={this.onScannerCancel}
+        />
+      </View>
+    );
+  }
 }
 
 export default function App() {
-  return <AppContainer />;
+  return (
+    <React.Fragment>
+      <SafeAreaView style={styles.safeAreaTop} />
+      <SafeAreaView style={styles.safeAreaBottom}>
+        <StatusBar barStyle="default" />
+        <AppContainer />
+      </SafeAreaView>
+    </React.Fragment>
+  );
 }
 
 const styles = StyleSheet.create({
+  safeAreaTop: {
+    flex: 0,
+    backgroundColor: common.backgroundColorSecondary,
+    paddingTop: Platform.OS === "android" ? 25 : 0
+  },
+  safeAreaBottom: {
+    flex: 1,
+    backgroundColor: common.backgroundColorSecondary
+  },
   container: {
     flex: 1,
-    backgroundColor: "transparent",
+    backgroundColor: common.backgroundColorPrimary,
     alignItems: "center",
-    justifyContent: "center",
-    paddingTop: getStatusBarHeight(),
-    marginBottom: getBottomSpace()
+    justifyContent: "center"
   },
   containerTemperature: {
     flex: 10,
     alignSelf: "stretch",
-    backgroundColor: "red",
+    backgroundColor: common.backgroundColorPrimary,
     alignItems: "center",
     justifyContent: "center"
   },
   containerAddApartment: {
     flex: 2,
     alignSelf: "stretch",
-    backgroundColor: "green",
+    backgroundColor: common.backgroundColorSecondary,
     alignItems: "center",
     justifyContent: "center"
+  },
+  textNoApartment: {
+    color: common.text.color.primary,
+    fontSize: common.text.fontSize.h4
   }
 });

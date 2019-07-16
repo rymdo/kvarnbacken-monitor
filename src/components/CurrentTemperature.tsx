@@ -1,6 +1,5 @@
 import * as React from "react";
 import { View, StyleSheet, Text } from "react-native";
-import { RFValue } from "react-native-responsive-fontsize";
 import { common } from "./../Constants";
 
 export enum Unit {
@@ -66,21 +65,21 @@ export class CurrentTemperature extends React.Component<
 }
 
 const styles = StyleSheet.create({
-  container: {
-    borderRadius: common.borderRadius
-  },
+  container: {},
   textTemperature: {
-    fontSize: RFValue(80),
+    fontSize: common.text.fontSize.h1,
     marginLeft: 20,
     marginRight: 20,
     justifyContent: "center",
-    alignContent: "center"
+    alignContent: "center",
+    color: common.text.color.primary
   },
   textDate: {
-    fontSize: RFValue(20),
+    fontSize: common.text.fontSize.h4,
     marginLeft: 20,
     marginRight: 20,
     justifyContent: "center",
-    alignContent: "center"
+    alignContent: "center",
+    color: common.text.color.primary
   }
 });
