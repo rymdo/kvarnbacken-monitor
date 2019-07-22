@@ -1,14 +1,10 @@
 import * as React from "react";
-import {
-  View,
-  StyleSheet,
-  Text,
-  Modal,
-  Alert,
-  TouchableHighlight
-} from "react-native";
+import { View, StyleSheet, Text, Modal, Alert, Platform } from "react-native";
+import Icon from "react-native-vector-icons/FontAwesome";
+import { Button } from "react-native-elements";
 import * as Permissions from "expo-permissions";
 import { BarCodeScanner } from "expo-barcode-scanner";
+import { common } from "../Constants";
 
 export const BARCODE_TYPE_QRCODE = "org.iso.QRCode";
 
@@ -159,7 +155,7 @@ export class BarCodeScannerModal extends React.Component<
 
   private getLoadingView(): JSX.Element {
     return (
-      <View>
+      <View style={styles.container}>
         <Text>Loading...</Text>
       </View>
     );
@@ -172,9 +168,20 @@ export class BarCodeScannerModal extends React.Component<
         <View
           style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
         >
-          <TouchableHighlight onPress={this.onCancel}>
-            <Text>Hide Modal</Text>
-          </TouchableHighlight>
+          <Button
+            title="Cancel"
+            buttonStyle={styles.buttonContainer}
+            titleStyle={styles.buttonText}
+            icon={
+              <Icon
+                name="qrcode"
+                size={styles.buttonText.fontSize}
+                color={styles.buttonText.color}
+                style={{ padding: 5 }}
+              />
+            }
+            onPress={this.onCancel}
+          />
         </View>
       </View>
     );
@@ -202,7 +209,14 @@ export class BarCodeScannerModal extends React.Component<
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    marginTop: 50
+    flex: 1
+  },
+  buttonContainer: {
+    backgroundColor: common.backgroundColorPrimary,
+    padding: 16
+  },
+  buttonText: {
+    fontSize: common.text.fontSize.h3,
+    color: common.text.color.primary
   }
 });

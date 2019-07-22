@@ -24,29 +24,26 @@ export class AddApartmentButton extends React.Component<
     const { onPress, isLoading } = this.props;
 
     return (
-      <View style={styles.container}>
-        <Button
-          title="Scan"
-          loading={isLoading}
-          buttonStyle={styles.buttonContainer}
-          titleStyle={styles.buttonText}
-          icon={
-            <Icon
-              name="qrcode"
-              size={styles.buttonText.fontSize}
-              color={styles.buttonText.color}
-              style={{ padding: 5 }}
-            />
-          }
-          onPress={onPress}
-        />
-      </View>
+      <Button
+        title="Scan"
+        loading={isLoading}
+        buttonStyle={styles.buttonContainer}
+        titleStyle={styles.buttonText}
+        icon={
+          <Icon
+            name="qrcode"
+            size={styles.buttonText.fontSize}
+            color={styles.buttonText.color}
+            style={{ padding: 5 }}
+          />
+        }
+        onPress={onPress}
+      />
     );
   }
 }
 
 const styles = StyleSheet.create({
-  container: {},
   buttonContainer: {
     backgroundColor: common.backgroundColorPrimary,
     padding: 16

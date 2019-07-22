@@ -126,33 +126,37 @@ export class AppContainer extends React.Component<AppProps, AppState> {
   };
 
   private onPressAddApartmentButton = () => {
-    if (this.isSimulator()) {
-      this.setState({
-        egain: {
-          ...this.state.egain,
-          loading: true
-        }
-      });
-      setTimeout(() => {
-        this.setState({
-          apartment: {
-            ...this.state.apartment,
-            guid: "1234",
-            readingLatest: {
-              temperature: 22.3,
-              humidity: 40,
-              date: new Date()
-            }
-          },
-          egain: {
-            ...this.state.egain,
-            loading: false
-          }
-        });
-      }, 1000);
-      return;
+    if (!this.isSimulator()) {
+      return this.SIMULATOR_onPressAddApartmentButton();
     }
     this.showScanner();
+  };
+
+  private SIMULATOR_onPressAddApartmentButton = () => {
+    this.setState({
+      egain: {
+        ...this.state.egain,
+        loading: true
+      }
+    });
+    setTimeout(() => {
+      this.setState({
+        apartment: {
+          ...this.state.apartment,
+          guid: "1234",
+          readingLatest: {
+            temperature: 22.3,
+            humidity: 40,
+            date: new Date()
+          }
+        },
+        egain: {
+          ...this.state.egain,
+          loading: false
+        }
+      });
+    }, 1000);
+    return;
   };
 
   private onScannerResult = (result: BarCodeScannerResult) => {
