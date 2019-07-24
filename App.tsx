@@ -34,6 +34,13 @@ export interface AppState {
   };
 }
 
+export enum Screen {
+  LOADING,
+  NO_APARTMENT,
+  SCANNER,
+  CURRENT_TEMPERATURE
+}
+
 export class AppContainer extends React.Component<AppProps, AppState> {
   private readonly storageService: StorageService;
   private readonly egainService: EgainService;
@@ -236,84 +243,27 @@ export class AppContainer extends React.Component<AppProps, AppState> {
     }
   };
 
-  private getLoadingView(): JSX.Element {
-    return (
-      <View style={styles.container}>
-        <View style={styles.containerContent}>
+  private getTopView(): JSX.Element {
+    switch (this.getCurrentScreen()) {
+      case Screen.LOADING: {
+        return (
           <View style={styles.containerContentLoading}>
             <ActivityIndicator
               size={"large"}
               color={common.text.color.primary}
             />
           </View>
-        </View>
-        <View style={styles.containerBottomBar}>
-          <ButtonBottom
-            text={"Loading"}
-            icon={"qrcode"}
-            onPress={() => {
-              console.debug("App.getLoadingView.ButtonBottom.onPress");
-            }}
-          />
-        </View>
-      </View>
-    );
-  }
-
-  private getNoApartmentView(): JSX.Element {
-    return (
-      <View style={styles.container}>
-        <View style={styles.containerContent}>
+        );
+      }
+      case Screen.NO_APARTMENT: {
+        return (
           <View style={styles.containerContentNoApartment}>
             <Text style={styles.text}>Scan QR with button below</Text>
           </View>
-        </View>
-        <View style={styles.containerBottomBar}>
-          <ButtonBottom
-            text={"Scan"}
-            icon={"qrcode"}
-            onPress={() => {
-              console.debug("App.getNoApartmentView.ButtonBottom.onPress");
-              this.onPressAddApartmentButton();
-            }}
-          />
-        </View>
-      </View>
-    );
-  }
-
-  private getTemperatureView(): JSX.Element {
-    const { apartment } = this.state;
-    const { temperature, date } = apartment.readingLatest;
-    return (
-      <View style={styles.container}>
-        <View style={styles.containerContent}>
-          <View style={styles.containerContentCurrentTemperature}>
-            <CurrentTemperature
-              temperature={temperature}
-              date={date}
-              unit={Unit.C}
-            />
-          </View>
-        </View>
-        <View style={styles.containerBottomBar}>
-          <ButtonBottom
-            text={"Scan"}
-            icon={"qrcode"}
-            onPress={() => {
-              console.debug("App.getTemperatureView.ButtonBottom.onPress");
-              this.onPressAddApartmentButton();
-            }}
-          />
-        </View>
-      </View>
-    );
-  }
-
-  private getScannerView(): JSX.Element {
-    return (
-      <View style={styles.container}>
-        <View style={styles.containerContent}>
+        );
+      }
+      case Screen.SCANNER: {
+        return (
           <View style={styles.containerContentScanner}>
             <Scanner
               onResult={(result: ScannerResult) => {
@@ -326,32 +276,99 @@ export class AppContainer extends React.Component<AppProps, AppState> {
               }}
             />
           </View>
-        </View>
-        <View style={styles.containerBottomBar}>
+        );
+      }
+      case Screen.CURRENT_TEMPERATURE: {
+        const { apartment } = this.state;
+        const { temperature, date } = apartment.readingLatest;
+        return (
+          <View style={styles.containerContentCurrentTemperature}>
+            <CurrentTemperature
+              temperature={temperature}
+              date={date}
+              unit={Unit.C}
+            />
+          </View>
+        );
+      }
+    }
+  }
+
+  private getBottomView(): JSX.Element {
+    switch (this.getCurrentScreen()) {
+      case Screen.LOADING: {
+        return (
+          <ButtonBottom
+            text={"Loading"}
+            icon={"qrcode"}
+            onPress={() => {
+              console.debug("App.getBottomView.LOADING.ButtonBottom.onPress");
+            }}
+          />
+        );
+      }
+      case Screen.NO_APARTMENT: {
+        return (
+          <ButtonBottom
+            text={"Scan"}
+            icon={"qrcode"}
+            onPress={() => {
+              console.debug(
+                "App.getBottomView.NO_APARTMENT.ButtonBottom.onPress"
+              );
+              this.onPressAddApartmentButton();
+            }}
+          />
+        );
+      }
+      case Screen.SCANNER: {
+        return (
           <ButtonBottom
             text={"Cancel"}
             icon={"qrcode"}
             onPress={() => {
-              console.debug("App.getScannerView.ButtonBottom.onPress");
-              this.hideScanner();
+              console.debug("App.getBottomView.SCANNER.ButtonBottom.onPress");
             }}
           />
-        </View>
-      </View>
-    );
+        );
+      }
+      case Screen.CURRENT_TEMPERATURE: {
+        return (
+          <ButtonBottom
+            text={"Scan"}
+            icon={"qrcode"}
+            onPress={() => {
+              console.debug(
+                "App.getBottomView.CURRENT_TEMPERATURE.ButtonBottom.onPress"
+              );
+              this.onPressAddApartmentButton();
+            }}
+          />
+        );
+      }
+    }
+  }
+
+  private getCurrentScreen(): Screen {
+    if (this.isLoading()) {
+      return Screen.LOADING;
+    }
+    if (this.state.scanner.show) {
+      return Screen.SCANNER;
+    }
+    if (!this.hasApartmentReading()) {
+      return Screen.NO_APARTMENT;
+    }
+    return Screen.CURRENT_TEMPERATURE;
   }
 
   public render(): JSX.Element {
-    if (this.isLoading()) {
-      return this.getLoadingView();
-    }
-    if (this.state.scanner.show) {
-      return this.getScannerView();
-    }
-    if (!this.hasApartmentReading()) {
-      return this.getNoApartmentView();
-    }
-    return this.getTemperatureView();
+    return (
+      <View style={styles.container}>
+        <View style={styles.containerTop}>{this.getTopView()}</View>
+        <View style={styles.containerBottom}>{this.getBottomView()}</View>
+      </View>
+    );
   }
 }
 
@@ -380,6 +397,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: common.backgroundColorPrimary
+  },
+  containerTop: {
+    flex: 6,
+    width: "100%"
+  },
+  containerBottom: {
+    flex: 1
   },
   containerContent: {
     flex: 6,
