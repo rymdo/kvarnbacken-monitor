@@ -1,7 +1,7 @@
 import { AsyncStorage } from "react-native";
 import Constants from "expo-constants";
 
-export interface Store {
+export interface StoreContent {
   apartment: {
     guid: string;
   };
@@ -14,12 +14,12 @@ export class StorageService {
     await AsyncStorage.removeItem(this.STORE_KEY);
   };
 
-  public store = async (store: Store): Promise<void> => {
+  public store = async (store: StoreContent): Promise<void> => {
     const storeJSON = JSON.stringify(store);
     await AsyncStorage.setItem(this.STORE_KEY, storeJSON);
   };
 
-  public load = async (): Promise<Store> => {
+  public load = async (): Promise<StoreContent> => {
     const storeJSON = await AsyncStorage.getItem(this.STORE_KEY);
     if (!storeJSON) {
       throw new Error("StorageService: load: not initialized");
@@ -27,12 +27,12 @@ export class StorageService {
     if (storeJSON.length < this.getMinimumStoreSize()) {
       throw new Error("StorageService: load: loaded storage corrupted");
     }
-    const store: Store = JSON.parse(storeJSON);
+    const store: StoreContent = JSON.parse(storeJSON);
     return store;
   };
 
   private getMinimumStoreSize(): number {
-    const emptyStore: Store = {
+    const emptyStore: StoreContent = {
       apartment: {
         guid: ""
       }

@@ -11,7 +11,7 @@ import {
 import { CurrentTemperature, Unit } from "./src/components/CurrentTemperature";
 import { ButtonBottom } from "./src/components/ButtonBottom";
 import { EgainService, ListSensorValue } from "./src/services/Egain";
-import { StorageService, Store } from "./src/services/Storage";
+import { StorageService, StoreContent } from "./src/services/Storage";
 import Constants from "expo-constants";
 import { common } from "./src/Constants";
 import { Scanner, ScannerResult } from "./src/components/Scanner";
@@ -60,7 +60,7 @@ export class AppContainer extends React.Component<AppProps, AppState> {
   }
 
   componentDidMount = () => {
-    this.loadStorage();
+    // this.loadStorage();
   };
 
   componentDidUpdate = (prevProps: AppProps, prevState: AppState) => {
@@ -72,7 +72,47 @@ export class AppContainer extends React.Component<AppProps, AppState> {
     }
   };
 
-  private loadStorage = async (): Promise<void> => {};
+  private loadStorage = async (): Promise<void> => {
+    console.debug("App.loadStorage");
+    try {
+      const storage = await this.storageService.load();
+      if (storage.apartment.guid) {
+        this.setState({
+          apartment: {
+            ...this.state.apartment,
+            guid: storage.apartment.guid
+          }
+        });
+      }
+    } catch (error) {
+      console.debug(`App.loadStorage.error: ${error}`);
+      this.resetStorage();
+    }
+  };
+
+  private resetStorage = async (): Promise<void> => {
+    console.debug("App.resetStorage");
+    try {
+      await this.storageService.clean();
+    } catch (error) {
+      console.error(`App.resetStorage.error: ${error}`);
+    }
+  };
+
+  private saveToStorage = async (): Promise<void> => {
+    console.debug("App.saveToStorage");
+    try {
+      const storage: StoreContent = {
+        apartment: {
+          guid: this.state.apartment.guid
+        }
+      };
+      await this.storageService.store(storage);
+    } catch (error) {
+      console.error(`App.saveToStorage.error: ${error}`);
+      this.resetStorage();
+    }
+  };
 
   private isSimulator = (): boolean => {
     return !Constants.isDevice;
@@ -183,6 +223,7 @@ export class AppContainer extends React.Component<AppProps, AppState> {
           readingLatest: reading
         }
       });
+      this.saveToStorage();
     } catch (e) {
       console.error(e);
     } finally {
