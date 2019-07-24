@@ -9,15 +9,12 @@ import {
   StatusBar
 } from "react-native";
 import { CurrentTemperature, Unit } from "./src/components/CurrentTemperature";
-import { AddApartmentButton } from "./src/components/AddApartmentButton";
-import {
-  BarCodeScannerModal,
-  BarCodeScannerResult
-} from "./src/components/BarCodeScannerModal";
+import { ButtonBottom } from "./src/components/ButtonBottom";
 import { EgainService, ListSensorValue } from "./src/services/Egain";
 import { StorageService, Store } from "./src/services/Storage";
 import Constants from "expo-constants";
 import { common } from "./src/Constants";
+import { Scanner, ScannerResult } from "./src/components/Scanner";
 
 export interface AppProps {}
 
@@ -91,23 +88,8 @@ export class AppContainer extends React.Component<AppProps, AppState> {
     return !!(apartment.guid && !!apartment.readingLatest);
   };
 
-  private getTemperatureView = (): JSX.Element => {
-    const { apartment } = this.state;
-    if (this.isLoading()) {
-      return <></>;
-    }
-    if (!this.hasApartmentReading()) {
-      return (
-        <Text style={styles.textNoApartment}>Scan QR with button below</Text>
-      );
-    }
-    const { temperature, date } = apartment.readingLatest;
-    return (
-      <CurrentTemperature temperature={temperature} date={date} unit={Unit.C} />
-    );
-  };
-
   private showScanner = () => {
+    console.debug("App.showScanner");
     this.setState({
       scanner: {
         ...this.state.scanner,
@@ -117,6 +99,7 @@ export class AppContainer extends React.Component<AppProps, AppState> {
   };
 
   private hideScanner = () => {
+    console.debug("App.hideScanner");
     this.setState({
       scanner: {
         ...this.state.scanner,
@@ -126,7 +109,7 @@ export class AppContainer extends React.Component<AppProps, AppState> {
   };
 
   private onPressAddApartmentButton = () => {
-    if (!this.isSimulator()) {
+    if (this.isSimulator()) {
       return this.SIMULATOR_onPressAddApartmentButton();
     }
     this.showScanner();
@@ -159,7 +142,8 @@ export class AppContainer extends React.Component<AppProps, AppState> {
     return;
   };
 
-  private onScannerResult = (result: BarCodeScannerResult) => {
+  private onScannerResult = (result: ScannerResult) => {
+    console.debug("App.onScannerResult");
     this.setState({
       apartment: {
         ...this.state.apartment,
@@ -169,7 +153,8 @@ export class AppContainer extends React.Component<AppProps, AppState> {
     this.hideScanner();
   };
 
-  private onScannerCancel = () => {
+  private onScannerError = (error: Error) => {
+    console.debug("App.onScannerError");
     this.hideScanner();
   };
 
@@ -210,35 +195,122 @@ export class AppContainer extends React.Component<AppProps, AppState> {
     }
   };
 
-  public render(): JSX.Element {
-    const { scanner } = this.state;
-
-    if (this.isLoading()) {
-      return (
-        <View style={styles.container}>
-          <ActivityIndicator size={"large"} color={common.text.color.primary} />
-        </View>
-      );
-    }
-
+  private getLoadingView(): JSX.Element {
     return (
       <View style={styles.container}>
-        <View style={styles.containerTemperature}>
-          {this.getTemperatureView()}
+        <View style={styles.containerContent}>
+          <View style={styles.containerContentLoading}>
+            <ActivityIndicator
+              size={"large"}
+              color={common.text.color.primary}
+            />
+          </View>
         </View>
-        <View style={styles.containerAddApartment}>
-          <AddApartmentButton
-            onPress={this.onPressAddApartmentButton}
-            isLoading={scanner.show}
+        <View style={styles.containerBottomBar}>
+          <ButtonBottom
+            text={"Loading"}
+            icon={"qrcode"}
+            onPress={() => {
+              console.debug("App.getLoadingView.ButtonBottom.onPress");
+            }}
           />
         </View>
-        <BarCodeScannerModal
-          isVisible={scanner.show}
-          onResult={this.onScannerResult}
-          onCancel={this.onScannerCancel}
-        />
       </View>
     );
+  }
+
+  private getNoApartmentView(): JSX.Element {
+    return (
+      <View style={styles.container}>
+        <View style={styles.containerContent}>
+          <View style={styles.containerContentNoApartment}>
+            <Text style={styles.text}>Scan QR with button below</Text>
+          </View>
+        </View>
+        <View style={styles.containerBottomBar}>
+          <ButtonBottom
+            text={"Scan"}
+            icon={"qrcode"}
+            onPress={() => {
+              console.debug("App.getNoApartmentView.ButtonBottom.onPress");
+              this.onPressAddApartmentButton();
+            }}
+          />
+        </View>
+      </View>
+    );
+  }
+
+  private getTemperatureView(): JSX.Element {
+    const { apartment } = this.state;
+    const { temperature, date } = apartment.readingLatest;
+    return (
+      <View style={styles.container}>
+        <View style={styles.containerContent}>
+          <View style={styles.containerContentCurrentTemperature}>
+            <CurrentTemperature
+              temperature={temperature}
+              date={date}
+              unit={Unit.C}
+            />
+          </View>
+        </View>
+        <View style={styles.containerBottomBar}>
+          <ButtonBottom
+            text={"Scan"}
+            icon={"qrcode"}
+            onPress={() => {
+              console.debug("App.getTemperatureView.ButtonBottom.onPress");
+              this.onPressAddApartmentButton();
+            }}
+          />
+        </View>
+      </View>
+    );
+  }
+
+  private getScannerView(): JSX.Element {
+    return (
+      <View style={styles.container}>
+        <View style={styles.containerContent}>
+          <View style={styles.containerContentScanner}>
+            <Scanner
+              onResult={(result: ScannerResult) => {
+                console.debug(`App.getScannerView.Scanner.onResult: ${result}`);
+                this.onScannerResult(result);
+              }}
+              onError={(error: Error) => {
+                console.debug(`App.getScannerView.Scanner.onError: ${error}`);
+                this.onScannerError(error);
+              }}
+            />
+          </View>
+        </View>
+        <View style={styles.containerBottomBar}>
+          <ButtonBottom
+            text={"Cancel"}
+            icon={"qrcode"}
+            onPress={() => {
+              console.debug("App.getScannerView.ButtonBottom.onPress");
+              this.hideScanner();
+            }}
+          />
+        </View>
+      </View>
+    );
+  }
+
+  public render(): JSX.Element {
+    if (this.isLoading()) {
+      return this.getLoadingView();
+    }
+    if (this.state.scanner.show) {
+      return this.getScannerView();
+    }
+    if (!this.hasApartmentReading()) {
+      return this.getNoApartmentView();
+    }
+    return this.getTemperatureView();
   }
 }
 
@@ -266,9 +338,34 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: common.backgroundColorPrimary,
+    backgroundColor: common.backgroundColorPrimary
+  },
+  containerContent: {
+    flex: 6,
+    width: "100%"
+  },
+  containerContentLoading: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center"
+  },
+  containerContentNoApartment: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  containerContentCurrentTemperature: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  containerContentScanner: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  containerBottomBar: {
+    flex: 1
   },
   containerTemperature: {
     flex: 10,
@@ -279,12 +376,9 @@ const styles = StyleSheet.create({
   },
   containerAddApartment: {
     flex: 2,
-    alignSelf: "stretch",
-    backgroundColor: common.backgroundColorSecondary,
-    alignItems: "center",
-    justifyContent: "center"
+    alignSelf: "stretch"
   },
-  textNoApartment: {
+  text: {
     color: common.text.color.primary,
     fontSize: common.text.fontSize.h4
   }
