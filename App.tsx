@@ -171,7 +171,7 @@ export class AppContainer extends React.Component<AppProps, AppState> {
           loading: true
         }
       });
-      const reading = await this.egainService.getLatestReading(guid);
+      const reading = await this.egainService.getLatestReadingQuick(guid);
       console.log(
         `App: updateTemperature [Temp: ${reading.temperature} Date: ${
           reading.date

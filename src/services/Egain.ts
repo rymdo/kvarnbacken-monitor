@@ -98,6 +98,24 @@ export class EgainService {
     }
   }
 
+  public async getLatestReadingQuick(guid: string): Promise<ListSensorValue> {
+    try {
+      const apiCheckInstalled = await this.APICheckInstalled(guid);
+
+      const checkInstalled = this.mapAPICheckInstalledToCheckInstalled(
+        apiCheckInstalled
+      );
+
+      return {
+        date: checkInstalled.SensorInfo.Date,
+        humidity: checkInstalled.SensorInfo.Humidity,
+        temperature: checkInstalled.SensorInfo.Temp
+      };
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   public async getLatestTemperature(guid: string): Promise<number> {
     try {
       const apiSensorValues = await this.APIListSensorValues(guid, 1);
